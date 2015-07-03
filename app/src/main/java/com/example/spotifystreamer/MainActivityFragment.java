@@ -2,6 +2,7 @@ package com.example.spotifystreamer;
 
 import android.app.Fragment;
 import android.content.Context;
+import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -58,7 +59,6 @@ public class MainActivityFragment extends Fragment {
         ListView listView = (ListView) rootView.findViewById(R.id.listview_artists);
         listView.setAdapter(mArtistAdapter);
 
-        // This bit comes from http://stackoverflow.com/questions/8063439/android-edittext-finished-typing-event
         EditText artistQuery = (EditText) rootView.findViewById(R.id.editText_search);
         artistQuery.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -86,12 +86,21 @@ public class MainActivityFragment extends Fragment {
 
     public class ArtistAdapter extends ArrayAdapter<Artist> {
 
-        public ArtistAdapter(Context context, int resource) {
+        private int RES_MISSING_IMAGE_ICON;
+
+        private void assignResourceIds() {
+            RES_MISSING_IMAGE_ICON = Resources.getSystem().getIdentifier("ic_dialog_alert",
+                    "drawable", "android");
+        }
+
+        public ArtistAdapter(Context context, int resource, int RES_MISSING_IMAGE_ICON) {
             super(context, resource);
+            assignResourceIds();
         }
 
         public ArtistAdapter(Context context, int resource, List<Artist> objects) {
             super(context, resource, objects);
+            assignResourceIds();
         }
 
         @Override
@@ -109,6 +118,8 @@ public class MainActivityFragment extends Fragment {
 
                 if (imageView != null && !artist.images.isEmpty()) {
                     Picasso.with(getContext()).load(artist.images.get(0).url).into(imageView);
+                } else if (imageView != null) {
+                    imageView.setImageResource(RES_MISSING_IMAGE_ICON);
                 }
 
                 if (textView != null) {

@@ -3,20 +3,21 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:padding="15dp" >
 
     <ImageView android:id="@+id/imageViewArtist"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:layout_gravity="center_vertical"
-        android:layout_weight="1"
-        android:src="@android:drawable/btn_star_big_off" />
+        android:scaleType="centerInside"
+        android:contentDescription="@string/content_description_artist_image" />
 
     <TextView android:id="@+id/textViewArtist"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
-        android:layout_weight="3"
-        android:text="Artist Name" />
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:layout_marginStart="10dp" />
 
 </LinearLayout>
