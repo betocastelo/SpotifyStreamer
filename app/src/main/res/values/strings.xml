@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">SpotifyStreamer</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="artist_editField">Artist</string>
+</resources>
