@@ -3,31 +3,32 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:padding="15dp" >
 
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/imageView"
+    <ImageView android:id="@+id/imageViewAlbum"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:layout_gravity="center_vertical"
-        android:layout_weight="2"
-        android:src="@android:drawable/btn_star_big_off" />
+        android:scaleType="centerInside"
+        android:contentDescription="@string/content_description_album_cover_image" />
 
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:orientation="vertical"
-        android:gravity="center_vertical"
-        android:layout_weight="3">
+        android:gravity="center_vertical" >
 
-        <TextView
+        <TextView android:id="@+id/textViewTrack"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Track Name" />
-        <TextView
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:layout_marginStart="10dp" />
+
+        <TextView android:id="@+id/textViewAlbum"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Album Name" />
+            android:layout_marginStart="10dp" />
 
     </LinearLayout>
 

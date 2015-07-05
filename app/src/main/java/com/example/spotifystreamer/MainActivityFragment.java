@@ -2,6 +2,7 @@ package com.example.spotifystreamer;
 
 import android.app.Fragment;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -36,7 +38,16 @@ public class MainActivityFragment extends Fragment {
 
     private static final String LOG_TAG = MainActivityFragment.class.getSimpleName();
 
-    ArtistAdapter mArtistAdapter;
+    private ArtistAdapter mArtistAdapter;
+
+    /**
+     * Calls search task with query given.
+     * @param artist Query.
+     */
+    private void searchArtist(String artist) {
+        SpotifySearchTask spotifySearchTask = new SpotifySearchTask();
+        spotifySearchTask.execute(artist);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -58,6 +69,17 @@ public class MainActivityFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         ListView listView = (ListView) rootView.findViewById(R.id.listview_artists);
         listView.setAdapter(mArtistAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                Artist artist = mArtistAdapter.getItem(position);
+
+                // Pass Artist.id to new intent.
+                Intent intent = new Intent(getActivity(), TopTracksActivity.class)
+                        .putExtra(Intent.EXTRA_TEXT, artist.id);
+                startActivity(intent);
+            }
+        });
 
         EditText artistQuery = (EditText) rootView.findViewById(R.id.editText_search);
         artistQuery.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -75,15 +97,6 @@ public class MainActivityFragment extends Fragment {
         return rootView;
     }
 
-    /**
-     * Calls search task with query given.
-     * @param artist Query.
-     */
-    private void searchArtist(String artist) {
-        SpotifySearchTask spotifySearchTask = new SpotifySearchTask();
-        spotifySearchTask.execute(artist);
-    }
-
     public class ArtistAdapter extends ArrayAdapter<Artist> {
 
         private int RES_MISSING_IMAGE_ICON;
@@ -93,28 +106,23 @@ public class MainActivityFragment extends Fragment {
                     "drawable", "android");
         }
 
-        public ArtistAdapter(Context context, int resource, int RES_MISSING_IMAGE_ICON) {
-            super(context, resource);
-            assignResourceIds();
-        }
-
         public ArtistAdapter(Context context, int resource, List<Artist> objects) {
             super(context, resource, objects);
             assignResourceIds();
         }
 
         @Override
-        public View getView(int position, View view, ViewGroup parent) {
-            if (view == null) {
+        public View getView(int position, View convertView, ViewGroup parent) {
+            if (convertView == null) {
                 LayoutInflater inflater = LayoutInflater.from(getContext());
-                view = inflater.inflate(R.layout.list_item_individual_artist, null);
+                convertView = inflater.inflate(R.layout.list_item_individual_artist, null);
             }
 
             Artist artist = getItem(position);
 
             if (artist != null) {
-                ImageView imageView = (ImageView) view.findViewById(R.id.imageViewArtist);
-                TextView textView = (TextView) view.findViewById(R.id.textViewArtist);
+                ImageView imageView = (ImageView) convertView.findViewById(R.id.imageViewArtist);
+                TextView textView = (TextView) convertView.findViewById(R.id.textViewArtist);
 
                 if (imageView != null && !artist.images.isEmpty()) {
                     Picasso.with(getContext()).load(artist.images.get(0).url).into(imageView);
@@ -127,7 +135,7 @@ public class MainActivityFragment extends Fragment {
                 }
             }
 
-            return view;
+            return convertView;
         }
     }
 
