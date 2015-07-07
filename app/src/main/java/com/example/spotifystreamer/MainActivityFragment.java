@@ -11,7 +11,6 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -19,6 +18,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -29,7 +29,6 @@ import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
-import kaaes.spotify.webapi.android.models.Pager;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -56,24 +55,15 @@ public class MainActivityFragment extends Fragment {
         // Retain this fragment across configuration changes.
         setRetainInstance(true);
 
-        // Initialize an empty pager so that onCreateView can start up.
-        ArtistsPager dummyPager = new ArtistsPager();
-        dummyPager.artists = new Pager<>();
-        dummyPager.artists.items = new ArrayList<>();
-
         mArtistAdapter =
                 new ArtistAdapter(getActivity(),
                         R.layout.list_item_individual_artist,
-                        dummyPager.artists.items);
+                        new ArrayList<Artist>());
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Stop the keyboard from appearing on startup.
-        getActivity().getWindow().setSoftInputMode(
-                WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
-
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         ListView listView = (ListView) rootView.findViewById(R.id.listview_artists);
         listView.setAdapter(mArtistAdapter);
@@ -90,6 +80,7 @@ public class MainActivityFragment extends Fragment {
         });
 
         EditText artistQuery = (EditText) rootView.findViewById(R.id.editText_search);
+        artistQuery.setImeOptions(EditorInfo.IME_ACTION_DONE); // otherwise we get NEXT in some cases...
         artistQuery.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
@@ -173,6 +164,13 @@ public class MainActivityFragment extends Fragment {
             mArtistAdapter.clear();
             for (Artist artist : artistsPager.artists.items) {
                 mArtistAdapter.add(artist);
+            }
+            mArtistAdapter.notifyDataSetChanged();
+
+            // If no results are found, tell user.
+            if (mArtistAdapter.isEmpty()) {
+                Toast.makeText(getActivity(), R.string.warning_no_artists_found,
+                        Toast.LENGTH_LONG).show();
             }
         }
     }

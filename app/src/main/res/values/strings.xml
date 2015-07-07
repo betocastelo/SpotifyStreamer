@@ -7,5 +7,7 @@
     <string name="content_description_artist_image">Artist\'s Image</string>
     <string name="hint_artist">Artist</string>
 
+    <string name="warning_no_artists_found">No artists match you query.</string>
+    <string name="warning_no_tracks_found">No tracks found for this artist!</string>
     <string name="title_activity_top_tracks">Top 10 Tracks</string>
 </resources>

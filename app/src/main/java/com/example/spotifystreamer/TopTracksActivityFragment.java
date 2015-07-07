@@ -14,6 +14,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -48,7 +49,6 @@ public class TopTracksActivityFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.i(LOG_TAG, "In onCreate");
 
         // Retain this fragment across configuration changes.
         setRetainInstance(true);
@@ -72,8 +72,6 @@ public class TopTracksActivityFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        Log.i(LOG_TAG, "In onCreateView");
-
         View rootView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
         ListView listView = (ListView) rootView.findViewById(R.id.listview_top_tracks);
         listView.setAdapter(mTracksAdapter);
@@ -153,6 +151,12 @@ public class TopTracksActivityFragment extends Fragment {
             mTracksAdapter.clear();
             for (Track track : tracks.tracks) {
                 mTracksAdapter.add(track);
+            }
+
+            // If no results are found, tell user.
+            if (mTracksAdapter.isEmpty()) {
+                Toast.makeText(getActivity(), R.string.warning_no_tracks_found,
+                        Toast.LENGTH_LONG).show();
             }
         }
     }
