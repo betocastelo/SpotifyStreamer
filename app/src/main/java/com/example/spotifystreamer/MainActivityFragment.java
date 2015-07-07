@@ -50,11 +50,11 @@ public class MainActivityFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Stop the keyboard from appearing on startup.
-        getActivity().getWindow().setSoftInputMode(
-                WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Retain this fragment across configuration changes.
+        setRetainInstance(true);
 
         // Initialize an empty pager so that onCreateView can start up.
         ArtistsPager dummyPager = new ArtistsPager();
@@ -65,6 +65,14 @@ public class MainActivityFragment extends Fragment {
                 new ArtistAdapter(getActivity(),
                         R.layout.list_item_individual_artist,
                         dummyPager.artists.items);
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Stop the keyboard from appearing on startup.
+        getActivity().getWindow().setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         ListView listView = (ListView) rootView.findViewById(R.id.listview_artists);
@@ -149,8 +157,7 @@ public class MainActivityFragment extends Fragment {
 
             SpotifyApi api = new SpotifyApi();
             SpotifyService spotify = api.getService();
-            ArtistsPager results = spotify.searchArtists(strings[0]);
-            return results;
+            return spotify.searchArtists(strings[0]);
         }
 
         @Override

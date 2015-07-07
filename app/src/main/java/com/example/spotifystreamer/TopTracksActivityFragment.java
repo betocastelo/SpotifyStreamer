@@ -46,8 +46,13 @@ public class TopTracksActivityFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Log.i(LOG_TAG, "In onCreate");
+
+        // Retain this fragment across configuration changes.
+        setRetainInstance(true);
+
         // Initialize empty tracks list so we can start up.
         Tracks dummyTracks = new Tracks();
         dummyTracks.tracks = new ArrayList<>();
@@ -57,15 +62,21 @@ public class TopTracksActivityFragment extends Fragment {
                         R.layout.list_item_individual_track,
                         dummyTracks.tracks);
 
-        View rootView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
-        ListView listView = (ListView) rootView.findViewById(R.id.listview_top_tracks);
-        listView.setAdapter(mTracksAdapter);
-
         Intent intent = getActivity().getIntent();
         if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
             String artistId = intent.getStringExtra(Intent.EXTRA_TEXT);
             retrieveTopTracks(artistId);
         }
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        Log.i(LOG_TAG, "In onCreateView");
+
+        View rootView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
+        ListView listView = (ListView) rootView.findViewById(R.id.listview_top_tracks);
+        listView.setAdapter(mTracksAdapter);
 
         return rootView;
     }
@@ -113,10 +124,6 @@ public class TopTracksActivityFragment extends Fragment {
                 if (textViewAlbum != null) {
                     textViewAlbum.setText(track.album.name);
                 }
-
-                Log.i(LOG_TAG, "Adapter: " + track.name + " from album " + track.album.name);
-            } else {
-                Log.i(LOG_TAG, "Adapter: Track was null.");
             }
 
             return convertView;
@@ -130,14 +137,15 @@ public class TopTracksActivityFragment extends Fragment {
                 return null;
             }
 
+            Log.i(LOG_TAG, "Getting tracks for " + strings[0]);
+
             // Spotify API requires the country (market) to be specified.
             Map<String, Object> spotifyOptions = new HashMap<>();
             spotifyOptions.put(SpotifyService.COUNTRY, "US");
 
             SpotifyApi api = new SpotifyApi();
             SpotifyService spotify = api.getService();
-            Tracks results = spotify.getArtistTopTrack(strings[0], spotifyOptions);
-            return results;
+            return spotify.getArtistTopTrack(strings[0], spotifyOptions);
         }
 
         @Override
