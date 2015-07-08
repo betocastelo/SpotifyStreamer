@@ -27,6 +27,7 @@ import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Track;
 import kaaes.spotify.webapi.android.models.Tracks;
+import retrofit.RetrofitError;
 
 /**
  * Displays the top 10 tracks for the given artist id (passed by Intent.EXTRA_TEXT).
@@ -109,6 +110,12 @@ public class TopTracksActivityFragment extends Fragment {
                 TextView textViewAlbum = (TextView) convertView.findViewById(R.id.textViewAlbum);
 
                 if (imageViewAlbum != null && !track.album.images.isEmpty()) {
+                    // Get the largest image back from album images (artist.images is ordered
+                    // from largest to smallest). Tried with the smallest image, but was not
+                    // happy with quality with the results. Since even the largest image is not
+                    // very large (typically 640x640), and since I might want to use tha larger
+                    // images later in the project (and Picasso will cache them), I don't think
+                    // this is a bad deal.
                     Picasso.with(getContext()).load(track.album.images.get(0).url)
                             .into(imageViewAlbum);
                 } else if (imageViewAlbum != null) {
@@ -143,14 +150,25 @@ public class TopTracksActivityFragment extends Fragment {
 
             SpotifyApi api = new SpotifyApi();
             SpotifyService spotify = api.getService();
-            return spotify.getArtistTopTrack(strings[0], spotifyOptions);
+
+            Tracks result;
+            try {
+                result = spotify.getArtistTopTrack(strings[0], spotifyOptions);
+            } catch (RetrofitError e) {
+                result = null;
+            }
+
+            return result;
         }
 
         @Override
         protected void onPostExecute(Tracks tracks) {
             mTracksAdapter.clear();
-            for (Track track : tracks.tracks) {
-                mTracksAdapter.add(track);
+
+            if (tracks != null) {
+                for (Track track : tracks.tracks) {
+                    mTracksAdapter.add(track);
+                }
             }
 
             // If no results are found, tell user.

@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,6 +28,7 @@ import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
+import retrofit.RetrofitError;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -124,6 +124,12 @@ public class MainActivityFragment extends Fragment {
                 TextView textView = (TextView) convertView.findViewById(R.id.textViewArtist);
 
                 if (imageView != null && !artist.images.isEmpty()) {
+                    // Get the largest image back from album images (artist.images is ordered
+                    // from largest to smallest). Tried with the smallest image, but was not
+                    // happy with quality with the results. Since even the largest image is not
+                    // very large (typically 640x640), and since I might want to use tha larger
+                    // images later in the project (and Picasso will cache them), I don't think
+                    // this is a bad deal.
                     Picasso.with(getContext()).load(artist.images.get(0).url).into(imageView);
                 } else if (imageView != null) {
                     imageView.setImageResource(RES_MISSING_IMAGE_ICON);
@@ -148,23 +154,27 @@ public class MainActivityFragment extends Fragment {
 
             SpotifyApi api = new SpotifyApi();
             SpotifyService spotify = api.getService();
-            return spotify.searchArtists(strings[0]);
+
+            ArtistsPager results;
+            try {
+                results = spotify.searchArtists(strings[0]);
+            } catch (RetrofitError e) {
+                results = null;
+            }
+
+            return results;
         }
 
         @Override
         protected void onPostExecute(ArtistsPager artistsPager) {
-            int numOfResults = artistsPager.artists.items.size();
-            Log.i(LOG_TAG, "onPostExectute; found " + numOfResults + " results.");
-            List<Artist> artists = artistsPager.artists.items;
-            for (int i=0; i<numOfResults; i++) {
-                Artist artist = artists.get(i);
-                Log.i(LOG_TAG, i + " " + artist.name);
+            mArtistAdapter.clear();
+
+            if (artistsPager != null) {
+                for (Artist artist : artistsPager.artists.items) {
+                    mArtistAdapter.add(artist);
+                }
             }
 
-            mArtistAdapter.clear();
-            for (Artist artist : artistsPager.artists.items) {
-                mArtistAdapter.add(artist);
-            }
             mArtistAdapter.notifyDataSetChanged();
 
             // If no results are found, tell user.
