@@ -35,11 +35,13 @@ import retrofit.RetrofitError;
 public class TopTracksActivityFragment extends Fragment {
 
     private static final String LOG_TAG = TopTracksActivityFragment.class.getSimpleName();
+    private static final String KEY_RESULTS = "search_results";
 
     private TracksAdapter mTracksAdapter;
+    private ArrayList<SpotifySearchResult> mSearchResults;
 
     /**
-     * Calls top 10 tracks retrive task from spotify web api.
+     * Calls top 10 tracks retrieve task from spotify web api.
      * @param artistId Spotify unique artist id.
      */
     private void retrieveTopTracks(String artistId) {
@@ -51,22 +53,16 @@ public class TopTracksActivityFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Retain this fragment across configuration changes.
-        setRetainInstance(true);
+        if (savedInstanceState == null || !savedInstanceState.containsKey(KEY_RESULTS)) {
+            mSearchResults = new ArrayList<>();
 
-        // Initialize empty tracks list so we can start up.
-        Tracks dummyTracks = new Tracks();
-        dummyTracks.tracks = new ArrayList<>();
-
-        mTracksAdapter =
-                new TracksAdapter(getActivity(),
-                        R.layout.list_item_individual_track,
-                        dummyTracks.tracks);
-
-        Intent intent = getActivity().getIntent();
-        if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
-            String artistId = intent.getStringExtra(Intent.EXTRA_TEXT);
-            retrieveTopTracks(artistId);
+            Intent intent = getActivity().getIntent();
+            if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
+                String artistId = intent.getStringExtra(Intent.EXTRA_TEXT);
+                retrieveTopTracks(artistId);
+            }
+        } else {
+            mSearchResults = savedInstanceState.getParcelableArrayList(KEY_RESULTS);
         }
     }
 
@@ -74,13 +70,22 @@ public class TopTracksActivityFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
+
+        mTracksAdapter = new TracksAdapter(getActivity(), mSearchResults);
+
         ListView listView = (ListView) rootView.findViewById(R.id.listview_top_tracks);
         listView.setAdapter(mTracksAdapter);
 
         return rootView;
     }
 
-    public class TracksAdapter extends ArrayAdapter<Track> {
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList(KEY_RESULTS, mSearchResults);
+        super.onSaveInstanceState(outState);
+    }
+
+    public class TracksAdapter extends ArrayAdapter<SpotifySearchResult> {
 
         private int RES_MISSING_IMAGE_ICON;
 
@@ -89,8 +94,15 @@ public class TopTracksActivityFragment extends Fragment {
                     "drawable", "android");
         }
 
-        public TracksAdapter(Context context, int resource, List<Track> objects) {
-            super(context, resource, objects);
+        /**
+         * This custom constructor drops the view argument of the superclass's constructor, since
+         * it reflects a custom view and that argument would have been ignored.
+         *
+         * @param context Current context, used to inflate layout.
+         * @param searchResults List of artists to be displayed.
+         */
+        public TracksAdapter(Context context, List<SpotifySearchResult> searchResults) {
+            super(context, 0, searchResults);
             assignResourceIds();
         }
 
@@ -98,36 +110,29 @@ public class TopTracksActivityFragment extends Fragment {
         public View getView(int position, View convertView, ViewGroup parent) {
             if (convertView == null) {
                 LayoutInflater inflater = LayoutInflater.from(getContext());
-                convertView = inflater.inflate(R.layout.list_item_individual_track, null);
+                convertView = inflater.inflate(R.layout.list_item_individual_track, parent, false);
             }
 
-            Track track = getItem(position);
+            SpotifySearchResult searchResult = getItem(position);
 
-            if (track != null) {
+            if (searchResult != null) {
                 ImageView imageViewAlbum =
                         (ImageView) convertView.findViewById(R.id.imageViewAlbum);
                 TextView textViewTrack = (TextView) convertView.findViewById(R.id.textViewTrack);
                 TextView textViewAlbum = (TextView) convertView.findViewById(R.id.textViewAlbum);
 
-                if (imageViewAlbum != null && !track.album.images.isEmpty()) {
-                    // Get the largest image back from album images (artist.images is ordered
-                    // from largest to smallest). Tried with the smallest image, but was not
-                    // happy with quality with the results. Since even the largest image is not
-                    // very large (typically 640x640), and since I might want to use tha larger
-                    // images later in the project (and Picasso will cache them), I don't think
-                    // this is a bad deal.
-                    Picasso.with(getContext()).load(track.album.images.get(0).url)
-                            .into(imageViewAlbum);
+                if (imageViewAlbum != null && searchResult.imageUrl != null) {
+                    Picasso.with(getContext()).load(searchResult.imageUrl).into(imageViewAlbum);
                 } else if (imageViewAlbum != null) {
                     imageViewAlbum.setImageResource(RES_MISSING_IMAGE_ICON);
                 }
 
                 if (textViewTrack != null) {
-                    textViewTrack.setText(track.name);
+                    textViewTrack.setText(searchResult.trackName);
                 }
 
                 if (textViewAlbum != null) {
-                    textViewAlbum.setText(track.album.name);
+                    textViewAlbum.setText(searchResult.albumName);
                 }
             }
 
@@ -167,7 +172,7 @@ public class TopTracksActivityFragment extends Fragment {
 
             if (tracks != null) {
                 for (Track track : tracks.tracks) {
-                    mTracksAdapter.add(track);
+                    mTracksAdapter.add(new SpotifySearchResult(track));
                 }
             }
 

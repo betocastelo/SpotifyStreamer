@@ -36,8 +36,10 @@ import retrofit.RetrofitError;
 public class MainActivityFragment extends Fragment {
 
     private static final String LOG_TAG = MainActivityFragment.class.getSimpleName();
+    private static final String KEY_RESULTS = "search_results";
 
     private ArtistAdapter mArtistAdapter;
+    private ArrayList<SpotifySearchResult> mSearchResults;
 
     /**
      * Calls search task with query given.
@@ -52,29 +54,30 @@ public class MainActivityFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Retain this fragment across configuration changes.
-        setRetainInstance(true);
-
-        mArtistAdapter =
-                new ArtistAdapter(getActivity(),
-                        R.layout.list_item_individual_artist,
-                        new ArrayList<Artist>());
+        if (savedInstanceState == null || !savedInstanceState.containsKey(KEY_RESULTS)) {
+            mSearchResults = new ArrayList<>();
+        } else {
+            mSearchResults = savedInstanceState.getParcelableArrayList(KEY_RESULTS);
+        }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+
+        mArtistAdapter = new ArtistAdapter(getActivity(), mSearchResults);
+
         ListView listView = (ListView) rootView.findViewById(R.id.listview_artists);
         listView.setAdapter(mArtistAdapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                Artist artist = mArtistAdapter.getItem(position);
+                SpotifySearchResult artist = mArtistAdapter.getItem(position);
 
                 // Pass Artist.id to new intent.
                 Intent intent = new Intent(getActivity(), TopTracksActivity.class)
-                        .putExtra(Intent.EXTRA_TEXT, artist.id);
+                        .putExtra(Intent.EXTRA_TEXT, artist.artistId);
                 startActivity(intent);
             }
         });
@@ -96,7 +99,13 @@ public class MainActivityFragment extends Fragment {
         return rootView;
     }
 
-    public class ArtistAdapter extends ArrayAdapter<Artist> {
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList(KEY_RESULTS, mSearchResults);
+        super.onSaveInstanceState(outState);
+    }
+
+    public class ArtistAdapter extends ArrayAdapter<SpotifySearchResult> {
 
         private int RES_MISSING_IMAGE_ICON;
 
@@ -105,8 +114,15 @@ public class MainActivityFragment extends Fragment {
                     "drawable", "android");
         }
 
-        public ArtistAdapter(Context context, int resource, List<Artist> objects) {
-            super(context, resource, objects);
+        /**
+         * This custom constructor drops the view argument of the superclass's constructor, since
+         * it reflects a custom view and that argument would have been ignored.
+         *
+         * @param context Current context, used to inflate layout.
+         * @param searchResults List of artists to be displayed.
+         */
+        public ArtistAdapter(Context context, List<SpotifySearchResult> searchResults) {
+            super(context, 0, searchResults);
             assignResourceIds();
         }
 
@@ -114,29 +130,24 @@ public class MainActivityFragment extends Fragment {
         public View getView(int position, View convertView, ViewGroup parent) {
             if (convertView == null) {
                 LayoutInflater inflater = LayoutInflater.from(getContext());
-                convertView = inflater.inflate(R.layout.list_item_individual_artist, null);
+                convertView =
+                        inflater.inflate(R.layout.list_item_individual_artist, parent, false);
             }
 
-            Artist artist = getItem(position);
+            SpotifySearchResult searchResult = getItem(position);
 
-            if (artist != null) {
+            if (searchResult != null) {
                 ImageView imageView = (ImageView) convertView.findViewById(R.id.imageViewArtist);
                 TextView textView = (TextView) convertView.findViewById(R.id.textViewArtist);
 
-                if (imageView != null && !artist.images.isEmpty()) {
-                    // Get the largest image back from album images (artist.images is ordered
-                    // from largest to smallest). Tried with the smallest image, but was not
-                    // happy with quality with the results. Since even the largest image is not
-                    // very large (typically 640x640), and since I might want to use tha larger
-                    // images later in the project (and Picasso will cache them), I don't think
-                    // this is a bad deal.
-                    Picasso.with(getContext()).load(artist.images.get(0).url).into(imageView);
+                if (imageView != null && searchResult.imageUrl != null) {
+                    Picasso.with(getContext()).load(searchResult.imageUrl).into(imageView);
                 } else if (imageView != null) {
                     imageView.setImageResource(RES_MISSING_IMAGE_ICON);
                 }
 
                 if (textView != null) {
-                    textView.setText(artist.name);
+                    textView.setText(searchResult.artistName);
                 }
             }
 
@@ -171,7 +182,7 @@ public class MainActivityFragment extends Fragment {
 
             if (artistsPager != null) {
                 for (Artist artist : artistsPager.artists.items) {
-                    mArtistAdapter.add(artist);
+                    mArtistAdapter.add(new SpotifySearchResult(artist));
                 }
             }
 
