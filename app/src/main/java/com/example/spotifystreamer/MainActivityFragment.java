@@ -3,7 +3,6 @@ package com.example.spotifystreamer;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -36,7 +35,6 @@ import retrofit.RetrofitError;
 public class MainActivityFragment extends Fragment {
 
     private static final String LOG_TAG = MainActivityFragment.class.getSimpleName();
-    private static final String KEY_RESULTS = "search_results";
 
     private ArtistAdapter mArtistAdapter;
     private ArrayList<SpotifySearchResult> mSearchResults;
@@ -54,10 +52,11 @@ public class MainActivityFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (savedInstanceState == null || !savedInstanceState.containsKey(KEY_RESULTS)) {
+        if (savedInstanceState == null
+                || !savedInstanceState.containsKey(Utility.KEY_SEARCH_RESULTS)) {
             mSearchResults = new ArrayList<>();
         } else {
-            mSearchResults = savedInstanceState.getParcelableArrayList(KEY_RESULTS);
+            mSearchResults = savedInstanceState.getParcelableArrayList(Utility.KEY_SEARCH_RESULTS);
         }
     }
 
@@ -77,7 +76,7 @@ public class MainActivityFragment extends Fragment {
 
                 // Pass Artist.id to new intent.
                 Intent intent = new Intent(getActivity(), TopTracksActivity.class)
-                        .putExtra(Intent.EXTRA_TEXT, artist.artistId);
+                        .putExtra(Utility.KEY_MEDIA_ID, artist.artistId);
                 startActivity(intent);
             }
         });
@@ -101,18 +100,11 @@ public class MainActivityFragment extends Fragment {
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        outState.putParcelableArrayList(KEY_RESULTS, mSearchResults);
+        outState.putParcelableArrayList(Utility.KEY_SEARCH_RESULTS, mSearchResults);
         super.onSaveInstanceState(outState);
     }
 
     public class ArtistAdapter extends ArrayAdapter<SpotifySearchResult> {
-
-        private int RES_MISSING_IMAGE_ICON;
-
-        private void assignResourceIds() {
-            RES_MISSING_IMAGE_ICON = Resources.getSystem().getIdentifier("ic_dialog_alert",
-                    "drawable", "android");
-        }
 
         /**
          * This custom constructor drops the view argument of the superclass's constructor, since
@@ -123,7 +115,6 @@ public class MainActivityFragment extends Fragment {
          */
         public ArtistAdapter(Context context, List<SpotifySearchResult> searchResults) {
             super(context, 0, searchResults);
-            assignResourceIds();
         }
 
         @Override
@@ -143,7 +134,8 @@ public class MainActivityFragment extends Fragment {
                 if (imageView != null && searchResult.imageUrl != null) {
                     Picasso.with(getContext()).load(searchResult.imageUrl).into(imageView);
                 } else if (imageView != null) {
-                    imageView.setImageResource(RES_MISSING_IMAGE_ICON);
+                    imageView.setImageResource(
+                            Utility.getDrawableResourceId(Utility.DRAWABLE_MISSING_IMAGE_ICON));
                 }
 
                 if (textView != null) {

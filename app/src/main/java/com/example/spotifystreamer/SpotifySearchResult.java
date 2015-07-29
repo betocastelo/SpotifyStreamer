@@ -27,6 +27,8 @@ public class SpotifySearchResult implements Parcelable {
     String trackId = null;
     String trackName = null;
     String albumName = null;
+    boolean isPlayable = false;
+    String previewUrl = null;
 
     // Get the largest image back from album images (artist.images is ordered
     // from largest to smallest). Tried with the smallest image, but was not
@@ -34,6 +36,7 @@ public class SpotifySearchResult implements Parcelable {
     // very large (typically 640x640), and since I might want to use tha larger
     // images later in the project (and Picasso will cache them), I don't think
     // this is a bad deal.
+    //! todo get all image urls instead.
     public SpotifySearchResult(Artist artist) {
         if (artist != null) {
             contentType = TYPE_ARTIST;
@@ -56,6 +59,10 @@ public class SpotifySearchResult implements Parcelable {
             trackId = track.id;
             trackName = track.name;
             albumName = track.album.name;
+
+            // apparently Track.is_playable may be null?!
+            isPlayable = track.is_playable == null ? false : track.is_playable;
+            previewUrl = track.preview_url;
         }
     }
 
@@ -66,6 +73,8 @@ public class SpotifySearchResult implements Parcelable {
         artistName = parcel.readString();
         contentType = parcel.readInt();
         imageUrl = parcel.readString();
+        isPlayable = parcel.readInt() != 0;
+        previewUrl = parcel.readString();
         trackId = parcel.readString();
         trackName = parcel.readString();
     }
@@ -83,11 +92,13 @@ public class SpotifySearchResult implements Parcelable {
         parcel.writeString(artistName);
         parcel.writeInt(contentType);
         parcel.writeString(imageUrl);
+        parcel.writeInt(isPlayable ? 1 : 0);
+        parcel.writeString(previewUrl);
         parcel.writeString(trackId);
         parcel.writeString(trackName);
     }
 
-    public final Parcelable.Creator<SpotifySearchResult> CREATOR =
+    public static final Parcelable.Creator<SpotifySearchResult> CREATOR =
             new Parcelable.Creator<SpotifySearchResult>() {
                 @Override
                 public SpotifySearchResult createFromParcel(Parcel parcel) {

@@ -15,7 +15,6 @@ import android.view.MenuItem;
 public class TopTracksActivity extends Activity {
 
     private static final String LOG_TAG = TopTracksActivity.class.getSimpleName();
-    private static final String TAG_TOP_TRACKS_FRAGMENT = "top_tracks_fragment";
 
     private TopTracksActivityFragment mTopTracksFragment;
 
@@ -24,20 +23,20 @@ public class TopTracksActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_top_tracks);
 
+        // todo We're no longer using this dialect. Fix me.
         FragmentManager fragmentManager = getFragmentManager();
         mTopTracksFragment = (TopTracksActivityFragment) fragmentManager
-                .findFragmentByTag(TAG_TOP_TRACKS_FRAGMENT);
+                .findFragmentByTag(Utility.TAG_TOP_TRACKS_FRAGMENT);
 
         // If the fragment is non-null, then it is currently being retained across a configuration
         // change.
         if (mTopTracksFragment == null) {
             Log.i(LOG_TAG, "New instance of top 10 fragment -- none retained.");
             mTopTracksFragment = new TopTracksActivityFragment();
-            fragmentManager.beginTransaction().add(mTopTracksFragment, TAG_TOP_TRACKS_FRAGMENT)
-                    .commit();
+            fragmentManager.beginTransaction().add(mTopTracksFragment,
+                    Utility.TAG_TOP_TRACKS_FRAGMENT).commit();
         }
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
