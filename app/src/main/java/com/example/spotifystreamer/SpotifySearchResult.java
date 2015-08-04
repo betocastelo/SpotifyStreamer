@@ -60,6 +60,8 @@ public class SpotifySearchResult implements Parcelable {
             trackName = track.name;
             albumName = track.album.name;
 
+            artistName = track.artists.get(0).name;
+
             // apparently Track.is_playable may be null?!
             isPlayable = track.is_playable == null ? false : track.is_playable;
             previewUrl = track.preview_url;

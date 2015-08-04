@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -74,6 +75,16 @@ public class TopTracksActivityFragment extends Fragment {
 
         ListView listView = (ListView) rootView.findViewById(R.id.listview_top_tracks);
         listView.setAdapter(mTracksAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                // Pass position and list of tracks to player intent.
+                Intent intent = new Intent(getActivity(), PlayerActivity.class)
+                        .putExtra(Utility.KEY_TRACK_INDEX, position)
+                        .putParcelableArrayListExtra(Utility.KEY_SEARCH_RESULTS, mSearchResults);
+                startActivity(intent);
+            }
+        });
 
         return rootView;
     }
