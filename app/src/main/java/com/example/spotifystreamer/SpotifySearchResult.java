@@ -16,19 +16,19 @@ public class SpotifySearchResult implements Parcelable {
     static final int TYPE_TRACK = 2;
 
     // Common
-    int contentType = TYPE_EMPTY;
-    String imageUrl = null;
+    public int contentType = TYPE_EMPTY;
+    public String imageUrl = null;
 
     // From Artist
-    String artistId = null;
-    String artistName = null;
+    public String artistId = null;
+    public String artistName = null;
 
     // From Track
-    String trackId = null;
-    String trackName = null;
-    String albumName = null;
-    boolean isPlayable = false;
-    String previewUrl = null;
+    public String trackId = null;
+    public String trackName = null;
+    public String albumName = null;
+    public boolean isPlayable = false;
+    public String previewUrl = null;
 
     // Get the largest image back from album images (artist.images is ordered
     // from largest to smallest). Tried with the smallest image, but was not
@@ -36,7 +36,7 @@ public class SpotifySearchResult implements Parcelable {
     // very large (typically 640x640), and since I might want to use tha larger
     // images later in the project (and Picasso will cache them), I don't think
     // this is a bad deal.
-    //! todo get all image urls instead.
+    // todo get all image urls instead.
     public SpotifySearchResult(Artist artist) {
         if (artist != null) {
             contentType = TYPE_ARTIST;
