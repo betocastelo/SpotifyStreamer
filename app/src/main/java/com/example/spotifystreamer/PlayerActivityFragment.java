@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,10 +26,13 @@ public class PlayerActivityFragment extends Fragment {
 
     private static final String LOG_TAG = PlayerActivityFragment.class.getSimpleName();
 
+    // Defined here insteaded of in Uitility because it's only used internally.
+    private static final String KEY_CURRENT_TRACK_POSITION = "current_track_position";
     private ArrayList<SpotifySearchResult> mSearchResults;
     private int mCurrentTrackIndex = 0;
     private int mPlayingTrackIndex = -1;
     private int mNumberOfResults = 0;
+    private String mCurrentTrackPosition = "0:00";
 
     private MediaPlayerService mPlayerService = null;
 
@@ -42,8 +46,11 @@ public class PlayerActivityFragment extends Fragment {
     // Views
     private ImageButton mImageButtonPlayPause;
     private ImageView mImageViewAlbum;
+    private SeekBar mSeekBar;
     private TextView mTextViewAlbum;
     private TextView mTextViewArtist;
+    private TextView mTextViewCurrentTime;
+    private TextView mTextViewMaxTime;
     private TextView mTextViewTrack;
 
     // Resources
@@ -57,6 +64,9 @@ public class PlayerActivityFragment extends Fragment {
         mTextViewAlbum = (TextView) rootView.findViewById(R.id.playerAlbumName);
         mTextViewArtist = (TextView) rootView.findViewById(R.id.playerArtistName);
         mTextViewTrack = (TextView) rootView.findViewById(R.id.playerTrackName);
+        mTextViewCurrentTime = (TextView) rootView.findViewById(R.id.playerCurrentTime);
+        mTextViewMaxTime = (TextView) rootView.findViewById(R.id.playerDuration);
+        mSeekBar = (SeekBar) rootView.findViewById(R.id.playerSeekBar);
 
         mMissingImageIcon = Utility.getDrawableResourceId(Utility.DRAWABLE_MISSING_IMAGE_ICON);
         mPauseIcon = Utility.getDrawableResourceId(Utility.DRAWABLE_PAUSE_ICON);
@@ -82,14 +92,18 @@ public class PlayerActivityFragment extends Fragment {
         Log.i(LOG_TAG, "Album: " + currentTrack.albumName);
         Log.i(LOG_TAG, "Name: " + currentTrack.trackName);
 
+        mTextViewCurrentTime.setText(mCurrentTrackPosition);
+
         // Load track into MediaPlayer object, but only if this isn't a configuration change.
-        if ((mPlayerState != PLAYER_STARTED && mPlayerState != PLAYER_PAUSED)
+        if (mPlayerService != null
+                && (mPlayerState != PLAYER_STARTED && mPlayerState != PLAYER_PAUSED)
                 || mPlayingTrackIndex != mCurrentTrackIndex) {
             playerInitialize(currentTrack.previewUrl);
         } else if (mPlayerState == PLAYER_STARTED) {
             mTrackPlayRequested = true;
             mImageButtonPlayPause.setImageResource(
                     Utility.getDrawableResourceId(Utility.DRAWABLE_PAUSE_ICON));
+            updateTrackPosition();
         }
 
         mTextViewArtist.setText(currentTrack.artistName);
@@ -102,6 +116,8 @@ public class PlayerActivityFragment extends Fragment {
         }
 
         mTextViewTrack.setText(currentTrack.trackName);
+
+        populateTrackDuration();
     }
 
     private void playerInitialize() {
@@ -145,8 +161,48 @@ public class PlayerActivityFragment extends Fragment {
         }
     }
 
-    private void startSeekBar(int position) {
+    private void populateTrackDuration() {
+        int milliseconds;
+        if (mPlayerService != null) {
+            milliseconds = mPlayerService.getSongDuration();
+        } else {
+            milliseconds = 30000;
+        }
 
+        mSeekBar.setMax(milliseconds);
+        mTextViewMaxTime.setText(timeStringFromMs(milliseconds));
+    }
+
+    private String timeStringFromMs(int milliseconds) {
+        int minutes = milliseconds/60000;
+        milliseconds /= 1000;
+        milliseconds %= 60;
+        return (minutes + ":" + (milliseconds > 9 ? milliseconds : "0" + milliseconds));
+    }
+
+    private final Runnable updateSeekBarRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateTrackPosition();
+        }
+    };
+
+    /**
+     * Calling this updates the seekbar position, and starts timer for regular updates.
+     *
+     * Based on http://stackoverflow.com/questions/24725030/using-seekbar-with-music-in-android.
+     */
+    private void updateTrackPosition() {
+        mSeekBar.removeCallbacks(updateSeekBarRunnable);
+        if (mPlayerService != null) {
+            updateTrackPosition(mPlayerService.getSongPosition());
+        }
+        mSeekBar.postDelayed(updateSeekBarRunnable, 1000);
+    }
+
+    private void updateTrackPosition(int position) {
+        mSeekBar.setProgress(position);
+        mTextViewCurrentTime.setText(timeStringFromMs(position));
     }
 
     @Override
@@ -169,6 +225,7 @@ public class PlayerActivityFragment extends Fragment {
             mCurrentTrackIndex = savedInstanceState.getInt(Utility.KEY_TRACK_INDEX);
             mPlayerState = savedInstanceState.getInt(Utility.KEY_PLAYER_STATE);
             mPlayingTrackIndex = savedInstanceState.getInt(Utility.KEY_PLAYING_TRACK_INDEX);
+            mCurrentTrackPosition = savedInstanceState.getString(KEY_CURRENT_TRACK_POSITION);
         }
 
         mNumberOfResults = mSearchResults.size();
@@ -191,7 +248,14 @@ public class PlayerActivityFragment extends Fragment {
         outState.putInt(Utility.KEY_TRACK_INDEX, mCurrentTrackIndex);
         outState.putInt(Utility.KEY_PLAYING_TRACK_INDEX, mPlayingTrackIndex);
         outState.putInt(Utility.KEY_PLAYER_STATE, mPlayerState);
+        outState.putString(KEY_CURRENT_TRACK_POSITION, (String) mTextViewCurrentTime.getText());
         super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void onPause() {
+        mSeekBar.removeCallbacks(updateSeekBarRunnable);
+        super.onPause();
     }
 
     public void nextTrack() {
@@ -202,7 +266,7 @@ public class PlayerActivityFragment extends Fragment {
     public void playerStarted() {
         mPlayerState = PLAYER_STARTED;
         mPlayingTrackIndex = mCurrentTrackIndex;
-        startSeekBar(0);
+        updateTrackPosition();
     }
 
     /**
@@ -237,5 +301,18 @@ public class PlayerActivityFragment extends Fragment {
                 || mPlayingTrackIndex != mCurrentTrackIndex) {
             playerInitialize();
         }
+
+        populateTrackDuration();
+    }
+
+    public void trackCompleted() {
+        updateTrackPosition(0);
+        mPlayerState = PLAYER_PAUSED; // Technically the media player is stopped, but we don't care.
+        mTrackPlayRequested = false;
+        mImageButtonPlayPause.setImageResource(mPlayIcon);
+    }
+
+    public void updateTrackDuration() {
+        populateTrackDuration();
     }
 }

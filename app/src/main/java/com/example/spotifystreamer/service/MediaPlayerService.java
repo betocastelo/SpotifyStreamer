@@ -33,6 +33,12 @@ public class MediaPlayerService extends Service {
     private static final int PLAYER_PREPARED = 2;
     private static final int PLAYER_STARTED = 3;
     private static final int PLAYER_PAUSED = 4;
+    private static final int PLAYER_COMPLETED = 5;
+
+    private void playerCompleted() {
+        Intent intent = new Intent(Utility.ACTION_PLAYER_COMPLETED);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
 
     private void setupMediaPlayer() {
         Log.i(LOG_TAG, "Setting up player...");
@@ -59,6 +65,16 @@ public class MediaPlayerService extends Service {
             }
         });
 
+        mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mediaPlayer) {
+                mTrackPlayRequested = false;
+                mediaPlayer.stop();
+                mediaPlayer.prepareAsync();
+                playerCompleted();
+            }
+        });
+
         mMediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
             @Override
             public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
@@ -77,7 +93,6 @@ public class MediaPlayerService extends Service {
         mMediaPlayer.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener() {
             @Override
             public void onSeekComplete(MediaPlayer mediaPlayer) {
-
             }
         });
     }
@@ -86,6 +101,22 @@ public class MediaPlayerService extends Service {
     public IBinder onBind(Intent intent) {
         setupMediaPlayer();
         return mBinder;
+    }
+
+    public int getSongPosition() {
+        Log.i(LOG_TAG, "Sending song position...");
+        return mMediaPlayer.getCurrentPosition();
+    }
+
+    public int getSongDuration() {
+        int duration = 30000;
+        synchronized (mSynchronizationLock) {
+            if (mPlayerState != PLAYER_IDLE && mPlayerState != PLAYER_INITIALIZED) {
+                duration = mMediaPlayer.getDuration();
+            }
+        }
+
+        return duration;
     }
 
     public void playerInitialize(String previewUrl) throws IOException {
@@ -131,7 +162,7 @@ public class MediaPlayerService extends Service {
                 Log.i(LOG_TAG, "Starting player...");
                 mMediaPlayer.start();
                 mPlayerState = PLAYER_STARTED;
-                Intent intent = new Intent(Utility.ACTION_PLAY_STARTED);
+                Intent intent = new Intent(Utility.ACTION_PLAYER_STARTED);
                 LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
             }
         }

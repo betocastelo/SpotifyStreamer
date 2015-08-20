@@ -74,16 +74,16 @@
                 android:id="@+id/playerCurrentTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
                 android:layout_centerVertical="true"
-                android:text="0:00" />
+                tools:ignore="RtlHardcoded" />
 
             <TextView
                 android:id="@+id/playerDuration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:text="0:30" />
+                android:layout_alignParentRight="true"
+                tools:ignore="RelativeOverlap,RtlHardcoded" />
 
         </RelativeLayout>
 
@@ -97,10 +97,11 @@
                 android:id="@+id/playerPreviousButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
                 android:layout_centerVertical="true"
                 android:onClick="previousTrack"
-                android:src="@android:drawable/ic_media_previous" />
+                android:src="@android:drawable/ic_media_previous"
+                tools:ignore="RtlHardcoded" />
 
             <ImageButton
                 android:id="@+id/playerPlayPauseButton"
@@ -115,10 +116,11 @@
                 android:id="@+id/playerNextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
                 android:layout_centerVertical="true"
                 android:onClick="nextTrack"
-                android:src="@android:drawable/ic_media_next" />
+                android:src="@android:drawable/ic_media_next"
+                tools:ignore="RtlHardcoded" />
 
         </RelativeLayout>
 

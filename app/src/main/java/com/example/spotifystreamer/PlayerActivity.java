@@ -41,7 +41,14 @@ public class PlayerActivity extends Activity {
         }
     };
 
-    private BroadcastReceiver onPlayStarted = new BroadcastReceiver() {
+    private BroadcastReceiver onPlayerCompleted = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            mPlayerFragment.trackCompleted();
+        }
+    };
+
+    private BroadcastReceiver onPlayerStarted = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.i(LOG_TAG, "Received broadcast.");
@@ -49,6 +56,28 @@ public class PlayerActivity extends Activity {
             mPlayerFragment.playerStarted();
         }
     };
+
+    private BroadcastReceiver onPlayerPrepared = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            mPlayerFragment.updateTrackDuration();
+        }
+    };
+
+    private void registerReceivers() {
+        IntentFilter filter = new IntentFilter(Utility.ACTION_PLAYER_STARTED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(onPlayerStarted, filter);
+        filter = new IntentFilter(Utility.ACTION_PLAYER_PREPARED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(onPlayerPrepared, filter);
+        filter = new IntentFilter(Utility.ACTION_PLAYER_COMPLETED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(onPlayerCompleted, filter);
+    }
+
+    private void unregisterReceivers() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(onPlayerStarted);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(onPlayerPrepared);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(onPlayerCompleted);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,16 +126,13 @@ public class PlayerActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(onPlayStarted);
+        unregisterReceivers();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-
-        IntentFilter filter = new IntentFilter(Utility.ACTION_PLAY_STARTED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(onPlayStarted, filter);
+        registerReceivers();
     }
 
     @Override

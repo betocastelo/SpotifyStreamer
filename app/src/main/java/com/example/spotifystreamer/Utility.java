@@ -18,7 +18,9 @@ public class Utility {
 
     // Used in LocalBroadcast (so I don't have to worry about collision with unknown
     // pending intents.
-    public static final String ACTION_PLAY_STARTED = "action_play_started";
+    public static final String ACTION_PLAYER_STARTED = "action_player_started";
+    public static final String ACTION_PLAYER_PREPARED = "action_player_prepared";
+    public static final String ACTION_PLAYER_COMPLETED = "action_player_completed";
 
     // List of system drawables we use in this app.
     public static int DRAWABLE_MISSING_IMAGE_ICON = 0;
