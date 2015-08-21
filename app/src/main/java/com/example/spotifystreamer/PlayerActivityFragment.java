@@ -26,7 +26,7 @@ public class PlayerActivityFragment extends Fragment {
 
     private static final String LOG_TAG = PlayerActivityFragment.class.getSimpleName();
 
-    // Defined here insteaded of in Uitility because it's only used internally.
+    // Defined here instead of in Utility because it's only used internally.
     private static final String KEY_CURRENT_TRACK_POSITION = "current_track_position";
     private ArrayList<SpotifySearchResult> mSearchResults;
     private int mCurrentTrackIndex = 0;
@@ -118,6 +118,8 @@ public class PlayerActivityFragment extends Fragment {
         mTextViewTrack.setText(currentTrack.trackName);
 
         populateTrackDuration();
+        updateTrackPosition(0);
+        setupSeekBar();
     }
 
     private void playerInitialize() {
@@ -127,6 +129,7 @@ public class PlayerActivityFragment extends Fragment {
     
     private void playerInitialize(String previewUrl) {
         Log.i(LOG_TAG, "Initializing player...");
+        mSeekBar.setEnabled(false);
 
         if (mPlayerService != null) {
             try {
@@ -145,6 +148,7 @@ public class PlayerActivityFragment extends Fragment {
             mPlayerService.playerPause();
         }
 
+        mSeekBar.removeCallbacks(mUpdateSeekBarRunnable);
         mTrackPlayRequested = false;
         mImageButtonPlayPause.setImageResource(mPlayIcon);
         mPlayerState = PLAYER_PAUSED;
@@ -173,6 +177,35 @@ public class PlayerActivityFragment extends Fragment {
         mTextViewMaxTime.setText(timeStringFromMs(milliseconds));
     }
 
+    private void setupSeekBar() {
+        if (mSeekBar == null)
+            return;
+
+        mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                seekBar.removeCallbacks(mUpdateSeekBarRunnable);
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                if (mPlayerState == PLAYER_STARTED) {
+                    seekBar.postDelayed(mUpdateSeekBarRunnable, 1000);
+                }
+
+                mPlayerService.playerSeek(seekBar.getProgress());
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    mTextViewCurrentTime.setText(timeStringFromMs(progress));
+                }
+            }
+        });
+    }
+
     private String timeStringFromMs(int milliseconds) {
         int minutes = milliseconds/60000;
         milliseconds /= 1000;
@@ -180,7 +213,7 @@ public class PlayerActivityFragment extends Fragment {
         return (minutes + ":" + (milliseconds > 9 ? milliseconds : "0" + milliseconds));
     }
 
-    private final Runnable updateSeekBarRunnable = new Runnable() {
+    private final Runnable mUpdateSeekBarRunnable = new Runnable() {
         @Override
         public void run() {
             updateTrackPosition();
@@ -193,11 +226,11 @@ public class PlayerActivityFragment extends Fragment {
      * Based on http://stackoverflow.com/questions/24725030/using-seekbar-with-music-in-android.
      */
     private void updateTrackPosition() {
-        mSeekBar.removeCallbacks(updateSeekBarRunnable);
+        mSeekBar.removeCallbacks(mUpdateSeekBarRunnable);
         if (mPlayerService != null) {
             updateTrackPosition(mPlayerService.getSongPosition());
         }
-        mSeekBar.postDelayed(updateSeekBarRunnable, 1000);
+        mSeekBar.postDelayed(mUpdateSeekBarRunnable, 1000);
     }
 
     private void updateTrackPosition(int position) {
@@ -254,13 +287,19 @@ public class PlayerActivityFragment extends Fragment {
 
     @Override
     public void onPause() {
-        mSeekBar.removeCallbacks(updateSeekBarRunnable);
+        mSeekBar.removeCallbacks(mUpdateSeekBarRunnable);
         super.onPause();
     }
 
     public void nextTrack() {
+        mSeekBar.removeCallbacks(mUpdateSeekBarRunnable);
         mCurrentTrackIndex++; // loadTrack takes care of index robustness
         loadTrack();
+    }
+
+    public void playerPrepared() {
+        mSeekBar.setEnabled(true);
+        populateTrackDuration();
     }
 
     public void playerStarted() {
@@ -290,6 +329,10 @@ public class PlayerActivityFragment extends Fragment {
         loadTrack();
     }
 
+    public void seekCompleted() {
+        mSeekBar.postDelayed(mUpdateSeekBarRunnable, 1000);
+    }
+
     /**
      * Allows parent activity to send this fragment the parent's bound service instance.
      * @param player Parent's bound service instance.
@@ -305,14 +348,11 @@ public class PlayerActivityFragment extends Fragment {
         populateTrackDuration();
     }
 
-    public void trackCompleted() {
+    public void songFinished() {
+        mSeekBar.removeCallbacks(mUpdateSeekBarRunnable);
         updateTrackPosition(0);
         mPlayerState = PLAYER_PAUSED; // Technically the media player is stopped, but we don't care.
         mTrackPlayRequested = false;
         mImageButtonPlayPause.setImageResource(mPlayIcon);
-    }
-
-    public void updateTrackDuration() {
-        populateTrackDuration();
     }
 }

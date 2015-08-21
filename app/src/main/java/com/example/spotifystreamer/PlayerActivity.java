@@ -41,10 +41,10 @@ public class PlayerActivity extends Activity {
         }
     };
 
-    private BroadcastReceiver onPlayerCompleted = new BroadcastReceiver() {
+    private BroadcastReceiver onEndOfSong = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            mPlayerFragment.trackCompleted();
+            mPlayerFragment.songFinished();
         }
     };
 
@@ -60,7 +60,14 @@ public class PlayerActivity extends Activity {
     private BroadcastReceiver onPlayerPrepared = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            mPlayerFragment.updateTrackDuration();
+            mPlayerFragment.playerPrepared();
+        }
+    };
+
+    private BroadcastReceiver onSeekCompleted = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            mPlayerFragment.seekCompleted();
         }
     };
 
@@ -69,14 +76,17 @@ public class PlayerActivity extends Activity {
         LocalBroadcastManager.getInstance(this).registerReceiver(onPlayerStarted, filter);
         filter = new IntentFilter(Utility.ACTION_PLAYER_PREPARED);
         LocalBroadcastManager.getInstance(this).registerReceiver(onPlayerPrepared, filter);
-        filter = new IntentFilter(Utility.ACTION_PLAYER_COMPLETED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(onPlayerCompleted, filter);
+        filter = new IntentFilter(Utility.ACTION_END_OF_SONG);
+        LocalBroadcastManager.getInstance(this).registerReceiver(onEndOfSong, filter);
+        filter = new IntentFilter(Utility.ACTION_PLAYER_SEEK_COMPLETED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(onSeekCompleted, filter);
     }
 
     private void unregisterReceivers() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(onPlayerStarted);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(onPlayerPrepared);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(onPlayerCompleted);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(onEndOfSong);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(onSeekCompleted);
     }
 
     @Override

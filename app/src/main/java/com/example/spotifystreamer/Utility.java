@@ -17,10 +17,11 @@ public class Utility {
     public static final String TAG_PLAYER_FRAGMENT = "player_fragment";
 
     // Used in LocalBroadcast (so I don't have to worry about collision with unknown
-    // pending intents.
+    // pending intents).
     public static final String ACTION_PLAYER_STARTED = "action_player_started";
     public static final String ACTION_PLAYER_PREPARED = "action_player_prepared";
-    public static final String ACTION_PLAYER_COMPLETED = "action_player_completed";
+    public static final String ACTION_END_OF_SONG = "action_player_completed";
+    public static final String ACTION_PLAYER_SEEK_COMPLETED = "action_player_seek_completed";
 
     // List of system drawables we use in this app.
     public static int DRAWABLE_MISSING_IMAGE_ICON = 0;

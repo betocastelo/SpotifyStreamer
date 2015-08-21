@@ -36,7 +36,7 @@ public class MediaPlayerService extends Service {
     private static final int PLAYER_COMPLETED = 5;
 
     private void playerCompleted() {
-        Intent intent = new Intent(Utility.ACTION_PLAYER_COMPLETED);
+        Intent intent = new Intent(Utility.ACTION_END_OF_SONG);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
@@ -58,6 +58,9 @@ public class MediaPlayerService extends Service {
                 synchronized (mSynchronizationLock) {
                     mPlayerState = PLAYER_PREPARED;
                 }
+
+                Intent intent = new Intent(Utility.ACTION_PLAYER_PREPARED);
+                LocalBroadcastManager.getInstance(MediaPlayerService.this).sendBroadcast(intent);
 
                 if (mTrackPlayRequested) {
                     playerStart();
@@ -151,6 +154,15 @@ public class MediaPlayerService extends Service {
         synchronized (mSynchronizationLock) {
             mMediaPlayer.reset();
             mPlayerState = PLAYER_IDLE;
+        }
+    }
+
+    public void playerSeek(int milliseconds) {
+        if (mPlayerState == PLAYER_PREPARED
+                || mPlayerState == PLAYER_STARTED
+                || mPlayerState == PLAYER_PAUSED
+                || mPlayerState == PLAYER_COMPLETED) {
+            mMediaPlayer.seekTo(milliseconds);
         }
     }
 
