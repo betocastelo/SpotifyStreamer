@@ -1,11 +1,12 @@
 package com.example.spotifystreamer;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements ArtistsFragment.Callback {
 
     private static final String TAG_SEARCH_RESULTS_FRAGMENT = "search_results_fragment";
 
@@ -37,6 +38,25 @@ public class MainActivity extends Activity {
         super.onResume();
 
 
+    }
+
+    @Override
+    public void onArtistSelected(String artistId) {
+        if (mUseTwoPane) {
+            Bundle arguments = new Bundle();
+            arguments.putString(Utility.KEY_ARTIST_ID, artistId);
+
+            TopTracksFragment fragment = new TopTracksFragment();
+            fragment.setArguments(arguments);
+
+            getFragmentManager().beginTransaction()
+                    .replace(R.id.top_ten_tracks_container, fragment, TAG_SEARCH_RESULTS_FRAGMENT)
+                    .commit();
+        } else {
+            Intent intent = new Intent(this, TopTracksActivity.class)
+                    .putExtra(Utility.KEY_ARTIST_ID, artistId);
+            startActivity(intent);
+        }
     }
 
     @Override

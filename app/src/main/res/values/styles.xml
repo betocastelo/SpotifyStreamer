@@ -5,4 +5,7 @@
         <!-- Customize your theme here. -->
     </style>
 
+    <style name="ArtistListStyle">
+        <!-- Only relevant in large screens -->
+    </style>
 </resources>

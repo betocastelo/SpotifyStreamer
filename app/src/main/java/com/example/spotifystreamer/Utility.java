@@ -6,8 +6,7 @@ import android.content.res.Resources;
  * Resources management, common definitions, helper methods, etc.
  */
 public class Utility {
-    public static final String KEY_MEDIA_ID = "media_id";
-    public static final String KEY_MEDIA_URL = "media_url";
+    public static final String KEY_ARTIST_ID = "artist_id";
     public static final String KEY_PLAYER_STATE = "player_state";
     public static final String KEY_PLAYING_TRACK_INDEX = "playing_track_index";
     public static final String KEY_TRACK_INDEX = "clicked_index";

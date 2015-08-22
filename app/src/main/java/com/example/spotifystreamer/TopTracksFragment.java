@@ -37,7 +37,7 @@ public class TopTracksFragment extends Fragment {
     private static final String LOG_TAG = TopTracksFragment.class.getSimpleName();
 
     private TracksAdapter mTracksAdapter;
-    private ArrayList<SpotifySearchResult> mSearchResults;
+    private ArrayList<SpotifySearchResult> mSearchResults = new ArrayList<>();
 
     /**
      * Calls top 10 tracks retrieve task from spotify web api.
@@ -52,17 +52,10 @@ public class TopTracksFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (savedInstanceState == null
-                || !savedInstanceState.containsKey(Utility.KEY_SEARCH_RESULTS)) {
-            mSearchResults = new ArrayList<>();
-
-            Intent intent = getActivity().getIntent();
-            if (intent != null && intent.hasExtra(Utility.KEY_MEDIA_ID)) {
-                String artistId = intent.getStringExtra(Utility.KEY_MEDIA_ID);
-                retrieveTopTracks(artistId);
-            }
-        } else {
-            mSearchResults = savedInstanceState.getParcelableArrayList(Utility.KEY_SEARCH_RESULTS);
+        Bundle arguments = getArguments();
+        if (arguments != null) {
+            String artistId = arguments.getString(Utility.KEY_ARTIST_ID);
+            retrieveTopTracks(artistId);
         }
     }
 
@@ -87,12 +80,6 @@ public class TopTracksFragment extends Fragment {
         });
 
         return rootView;
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        outState.putParcelableArrayList(Utility.KEY_SEARCH_RESULTS, mSearchResults);
-        super.onSaveInstanceState(outState);
     }
 
     public class TracksAdapter extends ArrayAdapter<SpotifySearchResult> {

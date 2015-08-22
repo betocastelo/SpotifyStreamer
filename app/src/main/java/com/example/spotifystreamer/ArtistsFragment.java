@@ -2,13 +2,13 @@ package com.example.spotifystreamer;
 
 import android.app.Fragment;
 import android.content.Context;
-import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -36,8 +36,13 @@ public class ArtistsFragment extends Fragment {
 
     private static final String LOG_TAG = ArtistsFragment.class.getSimpleName();
 
+    private static final String KEY_SELECTED = "selected_position";
+
     private ArtistAdapter mArtistAdapter;
-    private ArrayList<SpotifySearchResult> mSearchResults;
+    private ArrayList<SpotifySearchResult> mSearchResults = new ArrayList<>();
+
+    private ListView mListView;
+    private int mListPosition = ListView.INVALID_POSITION;
 
     /**
      * Calls search task with query given.
@@ -49,35 +54,51 @@ public class ArtistsFragment extends Fragment {
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        if (savedInstanceState == null
-                || !savedInstanceState.containsKey(Utility.KEY_SEARCH_RESULTS)) {
-            mSearchResults = new ArrayList<>();
-        } else {
-            mSearchResults = savedInstanceState.getParcelableArrayList(Utility.KEY_SEARCH_RESULTS);
-        }
-    }
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_artists, container, false);
 
+        if (savedInstanceState != null) {
+            if (savedInstanceState.containsKey(KEY_SELECTED)) {
+                mListPosition = savedInstanceState.getInt(KEY_SELECTED);
+            }
+
+            if (savedInstanceState.containsKey(Utility.KEY_SEARCH_RESULTS)) {
+                mSearchResults =
+                        savedInstanceState.getParcelableArrayList(Utility.KEY_SEARCH_RESULTS);
+
+                // If we have search results, I don't think we need the keyboard after a rotation.
+                getActivity().getWindow().setSoftInputMode(
+                        WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+            }
+        }
+
         mArtistAdapter = new ArtistAdapter(getActivity(), mSearchResults);
 
-        ListView listView = (ListView) rootView.findViewById(R.id.listview_artists);
-        listView.setAdapter(mArtistAdapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mListView = (ListView) rootView.findViewById(R.id.listview_artists);
+
+        // This is the only way I could find to know when the listview is done being populated.
+        // From http://stackoverflow.com/questions/29173588/
+        // how-do-i-check-when-my-listview-has-finished-redrawing
+        mListView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View view, int i, int i1, int i2, int i3, int i4, int i5,
+                                       int i6, int i7) {
+                mListView.removeOnLayoutChangeListener(this);
+
+                if (mListPosition != ListView.INVALID_POSITION) {
+                    mListView.smoothScrollToPosition(mListPosition);
+                }
+            }
+        });
+
+        mListView.setAdapter(mArtistAdapter);
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
                 SpotifySearchResult artist = mArtistAdapter.getItem(position);
-
-                // Pass Artist.id to new intent.
-                Intent intent = new Intent(getActivity(), TopTracksActivity.class)
-                        .putExtra(Utility.KEY_MEDIA_ID, artist.artistId);
-                startActivity(intent);
+                ((Callback) getActivity()).onArtistSelected(artist.artistId);
+                mListPosition = position;
             }
         });
 
@@ -101,6 +122,11 @@ public class ArtistsFragment extends Fragment {
     @Override
     public void onSaveInstanceState(Bundle outState) {
         outState.putParcelableArrayList(Utility.KEY_SEARCH_RESULTS, mSearchResults);
+
+        if (mListPosition != ListView.INVALID_POSITION) {
+            outState.putInt(KEY_SELECTED, mListPosition);
+        }
+
         super.onSaveInstanceState(outState);
     }
 
@@ -186,5 +212,12 @@ public class ArtistsFragment extends Fragment {
                         Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+    /**
+     * Allows parent activity to be notified of artist selections.
+     */
+    public interface Callback {
+        void onArtistSelected(String artistId);
     }
 }

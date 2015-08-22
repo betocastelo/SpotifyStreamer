@@ -9,12 +9,23 @@ public class TopTracksActivity extends Activity {
 
     private static final String LOG_TAG = TopTracksActivity.class.getSimpleName();
 
-    private TopTracksFragment mTopTracksFragment;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_top_tracks);
+
+        if (savedInstanceState == null) {
+            Bundle arguments = new Bundle();
+            arguments.putString(Utility.KEY_ARTIST_ID,
+                    getIntent().getStringExtra(Utility.KEY_ARTIST_ID));
+
+            TopTracksFragment fragment = new TopTracksFragment();
+            fragment.setArguments(arguments);
+
+            getFragmentManager().beginTransaction()
+                    .add(R.id.top_ten_tracks_container, fragment)
+                    .commit();
+        }
     }
 
     @Override
