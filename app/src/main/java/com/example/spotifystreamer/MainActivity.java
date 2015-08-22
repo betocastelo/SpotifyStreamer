@@ -7,12 +7,37 @@ import android.view.MenuItem;
 
 public class MainActivity extends Activity {
 
+    private static final String TAG_SEARCH_RESULTS_FRAGMENT = "search_results_fragment";
+
+    private boolean mUseTwoPane = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if (findViewById(R.id.top_ten_tracks_container) != null) {
+            // The top10 container will only be present in large-screen layouts (two-pane).
+            mUseTwoPane = true;
+
+            if (savedInstanceState == null) { // If we are rotating the frag state gets saved
+                                              // automatically.
+                getFragmentManager().beginTransaction()
+                        .replace(R.id.top_ten_tracks_container, new TopTracksActivityFragment(),
+                                TAG_SEARCH_RESULTS_FRAGMENT)
+                        .commit();
+            }
+        } else {
+            mUseTwoPane = false;
+        }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

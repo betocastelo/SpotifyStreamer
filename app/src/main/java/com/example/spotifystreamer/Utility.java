@@ -13,9 +13,6 @@ public class Utility {
     public static final String KEY_TRACK_INDEX = "clicked_index";
     public static final String KEY_SEARCH_RESULTS = "search_results";
 
-    public static final String TAG_TOP_TRACKS_FRAGMENT = "top_tracks_fragment";
-    public static final String TAG_PLAYER_FRAGMENT = "player_fragment";
-
     // Used in LocalBroadcast (so I don't have to worry about collision with unknown
     // pending intents).
     public static final String ACTION_PLAYER_STARTED = "action_player_started";
