@@ -23,7 +23,7 @@ public class MainActivity extends Activity {
             if (savedInstanceState == null) { // If we are rotating the frag state gets saved
                                               // automatically.
                 getFragmentManager().beginTransaction()
-                        .replace(R.id.top_ten_tracks_container, new TopTracksActivityFragment(),
+                        .replace(R.id.top_ten_tracks_container, new TopTracksFragment(),
                                 TAG_SEARCH_RESULTS_FRAGMENT)
                         .commit();
             }

@@ -24,7 +24,7 @@ public class PlayerActivity extends Activity {
 
     private static final String TAG_PLAYER_FRAGMENT = "player_fragment";
 
-    private PlayerActivityFragment mPlayerFragment;
+    private PlayerFragment mPlayerFragment;
 
     private boolean mBound = false;
     private ServiceConnection mConnection = new ServiceConnection() {
@@ -98,11 +98,11 @@ public class PlayerActivity extends Activity {
 
         FragmentManager fragmentManager = getFragmentManager();
         mPlayerFragment =
-                (PlayerActivityFragment) fragmentManager
+                (PlayerFragment) fragmentManager
                         .findFragmentByTag(TAG_PLAYER_FRAGMENT);
 
         if (mPlayerFragment == null) {
-            mPlayerFragment = new PlayerActivityFragment();
+            mPlayerFragment = new PlayerFragment();
             fragmentManager.beginTransaction().add(R.id.player_container, mPlayerFragment,
                     TAG_PLAYER_FRAGMENT)
                     .commit();

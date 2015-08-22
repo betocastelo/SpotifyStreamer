@@ -22,9 +22,9 @@ import java.util.ArrayList;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class PlayerActivityFragment extends Fragment {
+public class PlayerFragment extends Fragment {
 
-    private static final String LOG_TAG = PlayerActivityFragment.class.getSimpleName();
+    private static final String LOG_TAG = PlayerFragment.class.getSimpleName();
 
     // Defined here instead of in Utility because it's only used internally.
     private static final String KEY_CURRENT_TRACK_POSITION = "current_track_position";

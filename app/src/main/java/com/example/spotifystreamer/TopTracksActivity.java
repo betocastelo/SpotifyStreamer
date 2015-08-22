@@ -9,7 +9,7 @@ public class TopTracksActivity extends Activity {
 
     private static final String LOG_TAG = TopTracksActivity.class.getSimpleName();
 
-    private TopTracksActivityFragment mTopTracksFragment;
+    private TopTracksFragment mTopTracksFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

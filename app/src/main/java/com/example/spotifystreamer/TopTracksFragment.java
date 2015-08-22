@@ -32,9 +32,9 @@ import retrofit.RetrofitError;
 /**
  * Displays the top 10 tracks for the given artist id (passed by Intent.EXTRA_TEXT).
  */
-public class TopTracksActivityFragment extends Fragment {
+public class TopTracksFragment extends Fragment {
 
-    private static final String LOG_TAG = TopTracksActivityFragment.class.getSimpleName();
+    private static final String LOG_TAG = TopTracksFragment.class.getSimpleName();
 
     private TracksAdapter mTracksAdapter;
     private ArrayList<SpotifySearchResult> mSearchResults;

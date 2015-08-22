@@ -32,9 +32,9 @@ import retrofit.RetrofitError;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class MainActivityFragment extends Fragment {
+public class ArtistsFragment extends Fragment {
 
-    private static final String LOG_TAG = MainActivityFragment.class.getSimpleName();
+    private static final String LOG_TAG = ArtistsFragment.class.getSimpleName();
 
     private ArtistAdapter mArtistAdapter;
     private ArrayList<SpotifySearchResult> mSearchResults;
@@ -63,7 +63,7 @@ public class MainActivityFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_artists, container, false);
 
         mArtistAdapter = new ArtistAdapter(getActivity(), mSearchResults);
 
