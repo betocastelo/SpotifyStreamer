@@ -1,8 +1,15 @@
 package com.example.spotifystreamer;
 
 import android.app.Fragment;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,8 +50,10 @@ public class PlayerFragment extends Fragment {
     private static final int PLAYER_STARTED = 0;
     private static final int PLAYER_PAUSED = 1;
 
-    // Views
+    // View components
+    private ImageButton mImageButtonNext;
     private ImageButton mImageButtonPlayPause;
+    private ImageButton mImageButtonPrevious;
     private ImageView mImageViewAlbum;
     private SeekBar mSeekBar;
     private TextView mTextViewAlbum;
@@ -58,8 +67,80 @@ public class PlayerFragment extends Fragment {
     private int mPauseIcon;
     private int mPlayIcon;
 
+    // ************
+    // Communications handling
+    private boolean mBound = false;
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            MediaPlayerService.MediaPlayerBinder binder =
+                    (MediaPlayerService.MediaPlayerBinder) iBinder;
+            MediaPlayerService playerService = binder.getService();
+            mBound = true;
+            setPlayerService(playerService);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            mBound = false;
+        }
+    };
+
+    private BroadcastReceiver onEndOfSong = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            songFinished();
+        }
+    };
+
+    private BroadcastReceiver onPlayerStarted = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.i(LOG_TAG, "Received broadcast.");
+            playerStarted();
+        }
+    };
+
+    private BroadcastReceiver onPlayerPrepared = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            playerPrepared();
+        }
+    };
+
+    private BroadcastReceiver onSeekCompleted = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            seekCompleted();
+        }
+    };
+
+    private void registerReceivers() {
+        Context context = getActivity();
+        IntentFilter filter = new IntentFilter(Utility.ACTION_PLAYER_STARTED);
+        LocalBroadcastManager.getInstance(context).registerReceiver(onPlayerStarted, filter);
+        filter = new IntentFilter(Utility.ACTION_PLAYER_PREPARED);
+        LocalBroadcastManager.getInstance(context).registerReceiver(onPlayerPrepared, filter);
+        filter = new IntentFilter(Utility.ACTION_END_OF_SONG);
+        LocalBroadcastManager.getInstance(context).registerReceiver(onEndOfSong, filter);
+        filter = new IntentFilter(Utility.ACTION_PLAYER_SEEK_COMPLETED);
+        LocalBroadcastManager.getInstance(context).registerReceiver(onSeekCompleted, filter);
+    }
+
+    private void unregisterReceivers() {
+        Context context = getActivity();
+        LocalBroadcastManager.getInstance(context).unregisterReceiver(onPlayerStarted);
+        LocalBroadcastManager.getInstance(context).unregisterReceiver(onPlayerPrepared);
+        LocalBroadcastManager.getInstance(context).unregisterReceiver(onEndOfSong);
+        LocalBroadcastManager.getInstance(context).unregisterReceiver(onSeekCompleted);
+    }
+    // End of communications handling
+    // ***********
+
     private void initializeViews(View rootView) {
+        mImageButtonNext = (ImageButton) rootView.findViewById(R.id.playerNextButton);
         mImageButtonPlayPause = (ImageButton) rootView.findViewById(R.id.playerPlayPauseButton);
+        mImageButtonPrevious = (ImageButton) rootView.findViewById(R.id.playerPreviousButton);
         mImageViewAlbum = (ImageView) rootView.findViewById(R.id.playerAlbumCover);
         mTextViewAlbum = (TextView) rootView.findViewById(R.id.playerAlbumName);
         mTextViewArtist = (TextView) rootView.findViewById(R.id.playerArtistName);
@@ -177,6 +258,33 @@ public class PlayerFragment extends Fragment {
         mTextViewMaxTime.setText(timeStringFromMs(milliseconds));
     }
 
+    /**
+     * @link initializeViews must have been called first. There shouldn't be a need to check
+     * this here, since these are both internal implementation details.
+     */
+    private void setupButtons() {
+        mImageButtonNext.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                nextTrack();
+            }
+        });
+
+        mImageButtonPrevious.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                previousTrack();
+            }
+        });
+
+        mImageButtonPlayPause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                playPauseTrack();
+            }
+        });
+    }
+
     private void setupSeekBar() {
         if (mSeekBar == null)
             return;
@@ -262,6 +370,11 @@ public class PlayerFragment extends Fragment {
         }
 
         mNumberOfResults = mSearchResults.size();
+
+        Context context = getActivity();
+        Intent intent = new Intent(context, MediaPlayerService.class);
+        context.startService(intent);
+        context.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -271,6 +384,7 @@ public class PlayerFragment extends Fragment {
 
         initializeViews(rootView);
         loadTrack();
+        setupButtons();
 
         return rootView;
     }
@@ -287,8 +401,24 @@ public class PlayerFragment extends Fragment {
 
     @Override
     public void onPause() {
-        mSeekBar.removeCallbacks(mUpdateSeekBarRunnable);
         super.onPause();
+        unregisterReceivers();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        registerReceivers();
+    }
+
+    @Override
+    public void onStop() {
+        if (mBound) {
+            getActivity().unbindService(mConnection);
+            mBound = false;
+        }
+
+        super.onStop();
     }
 
     public void nextTrack() {
