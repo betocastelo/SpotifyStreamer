@@ -50,6 +50,7 @@ public class PlayerFragment extends DialogFragment {
     // Media player relevant states
     private static final int PLAYER_STARTED = 0;
     private static final int PLAYER_PAUSED = 1;
+    private static final int PLAYER_PREPARED = 2;
 
     // View components
     private ImageButton mImageButtonNext;
@@ -76,9 +77,17 @@ public class PlayerFragment extends DialogFragment {
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             MediaPlayerService.MediaPlayerBinder binder =
                     (MediaPlayerService.MediaPlayerBinder) iBinder;
-            MediaPlayerService playerService = binder.getService();
+            mPlayerService = binder.getService();
             mBound = true;
-            setPlayerService(playerService);
+
+            if ((mPlayerState != PLAYER_PREPARED
+                    && mPlayerState != PLAYER_STARTED
+                    && mPlayerState != PLAYER_PAUSED)
+                    || mPlayingTrackIndex != mCurrentTrackIndex) {
+                initializePlayer();
+            }
+
+            populateTrackDuration();
         }
 
         @Override
@@ -90,29 +99,40 @@ public class PlayerFragment extends DialogFragment {
     private BroadcastReceiver onEndOfSong = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            songFinished();
+            mSeekBar.removeCallbacks(mUpdateSeekBarRunnable);
+            updateTrackPosition(0);
+            mPlayerState = PLAYER_PAUSED; // Technically the media player is stopped, but we don't care.
+            mTrackPlayRequested = false;
+            mImageButtonPlayPause.setImageResource(mPlayIcon);
         }
     };
 
     private BroadcastReceiver onPlayerStarted = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.i(LOG_TAG, "Received broadcast.");
-            playerStarted();
+            Log.i(LOG_TAG, "Received started broadcast.");
+            mPlayerState = PLAYER_STARTED;
+            updateTrackPosition();
         }
     };
 
     private BroadcastReceiver onPlayerPrepared = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            playerPrepared();
+            mPlayerState = PLAYER_PREPARED;
+            mSeekBar.setEnabled(true);
+            populateTrackDuration();
+
+            if (mTrackPlayRequested) {
+                playerStart();
+            }
         }
     };
 
     private BroadcastReceiver onSeekCompleted = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            seekCompleted();
+            mSeekBar.postDelayed(mUpdateSeekBarRunnable, 1000);
         }
     };
 
@@ -137,6 +157,27 @@ public class PlayerFragment extends DialogFragment {
     }
     // End of communications handling
     // ***********
+
+    private void initializePlayer() {
+        SpotifySearchResult currentTrack = mSearchResults.get(mCurrentTrackIndex);
+        initializePlayer(currentTrack.previewUrl);
+    }
+
+    private void initializePlayer(String previewUrl) {
+        Log.i(LOG_TAG, "Initializing player...");
+        mSeekBar.setEnabled(false);
+
+        if (mPlayerService != null) {
+            try {
+                mPlayerService.playerInitialize(previewUrl);
+            } catch (IOException exception) {
+                Toast.makeText(getActivity(), R.string.media_player_error_ioerror,
+                        Toast.LENGTH_LONG).show();
+            }
+
+            mPlayingTrackIndex = mCurrentTrackIndex;
+        }
+    }
 
     private void initializeViews(View rootView) {
         mImageButtonNext = (ImageButton) rootView.findViewById(R.id.playerNextButton);
@@ -176,11 +217,9 @@ public class PlayerFragment extends DialogFragment {
 
         mTextViewCurrentTime.setText(mCurrentTrackPosition);
 
-        // Load track into MediaPlayer object, but only if this isn't a configuration change.
-        if (mPlayerService != null
-                && (mPlayerState != PLAYER_STARTED && mPlayerState != PLAYER_PAUSED)
-                || mPlayingTrackIndex != mCurrentTrackIndex) {
-            playerInitialize(currentTrack.previewUrl);
+        if (mCurrentTrackIndex != mPlayingTrackIndex) {
+            initializePlayer(currentTrack.previewUrl);
+            playerStart();
         } else if (mPlayerState == PLAYER_STARTED) {
             mTrackPlayRequested = true;
             mImageButtonPlayPause.setImageResource(
@@ -204,23 +243,10 @@ public class PlayerFragment extends DialogFragment {
         setupSeekBar();
     }
 
-    private void playerInitialize() {
-        SpotifySearchResult currentTrack = mSearchResults.get(mCurrentTrackIndex);
-        playerInitialize(currentTrack.previewUrl);
-    }
-    
-    private void playerInitialize(String previewUrl) {
-        Log.i(LOG_TAG, "Initializing player...");
-        mSeekBar.setEnabled(false);
-
-        if (mPlayerService != null) {
-            try {
-                mPlayerService.playerInitialize(previewUrl);
-            } catch (IOException exception) {
-                Toast.makeText(getActivity(), R.string.media_player_error_ioerror,
-                        Toast.LENGTH_LONG).show();
-            }
-        }
+    private void nextTrack() {
+        mSeekBar.removeCallbacks(mUpdateSeekBarRunnable);
+        mCurrentTrackIndex++; // loadTrack takes care of index robustness
+        loadTrack();
     }
 
     private void playerPause() {
@@ -238,12 +264,23 @@ public class PlayerFragment extends DialogFragment {
 
     private void playerStart() {
         mTrackPlayRequested = true;
+        Log.i(LOG_TAG, "Requested player start.");
 
         if (mPlayerService != null) {
             Log.i(LOG_TAG, "Starting player...");
             mPlayerService.playerStart();
             mPlayingTrackIndex = mCurrentTrackIndex;
             mImageButtonPlayPause.setImageResource(mPauseIcon);
+        }
+    }
+
+    private void playPauseTrack() {
+        if (mPlayerService != null) {
+            if (mTrackPlayRequested) {
+                playerPause();
+            } else {
+                playerStart();
+            }
         }
     }
 
@@ -257,6 +294,11 @@ public class PlayerFragment extends DialogFragment {
 
         mSeekBar.setMax(milliseconds);
         mTextViewMaxTime.setText(timeStringFromMs(milliseconds));
+    }
+
+    private void previousTrack() {
+        mCurrentTrackIndex--; // loadTrack takes care of index robustness
+        loadTrack();
     }
 
     /**
@@ -415,6 +457,7 @@ public class PlayerFragment extends DialogFragment {
             mBound = false;
         }
 
+        mSeekBar.removeCallbacks(mUpdateSeekBarRunnable);
         super.onStop();
     }
 
@@ -427,70 +470,5 @@ public class PlayerFragment extends DialogFragment {
         arguments.putInt(Utility.KEY_TRACK_INDEX, currentTrackIndex);
         fragment.setArguments(arguments);
         return fragment;
-    }
-
-    public void nextTrack() {
-        mSeekBar.removeCallbacks(mUpdateSeekBarRunnable);
-        mCurrentTrackIndex++; // loadTrack takes care of index robustness
-        loadTrack();
-    }
-
-    public void playerPrepared() {
-        mSeekBar.setEnabled(true);
-        populateTrackDuration();
-    }
-
-    public void playerStarted() {
-        mPlayerState = PLAYER_STARTED;
-        mPlayingTrackIndex = mCurrentTrackIndex;
-        updateTrackPosition();
-    }
-
-    /**
-     * todo update this comment
-     * This method only has any effect if the MediaPlayer member has been prepared. Otherwise
-     * it's a no-op. This method's main purpose is to be used as part of gui call backs (in
-     * which case initialization is likely to have occurred).
-     */
-    public void playPauseTrack() {
-        if (mPlayerService != null) {
-            if (mTrackPlayRequested) {
-                playerPause();
-            } else {
-                playerStart();
-            }
-        }
-    }
-
-    public void previousTrack() {
-        mCurrentTrackIndex--; // loadTrack takes care of index robustness
-        loadTrack();
-    }
-
-    public void seekCompleted() {
-        mSeekBar.postDelayed(mUpdateSeekBarRunnable, 1000);
-    }
-
-    /**
-     * Allows parent activity to send this fragment the parent's bound service instance.
-     * @param player Parent's bound service instance.
-     */
-    public void setPlayerService(MediaPlayerService player) {
-        mPlayerService = player;
-
-        if ((mPlayerState != PLAYER_STARTED && mPlayerState != PLAYER_PAUSED)
-                || mPlayingTrackIndex != mCurrentTrackIndex) {
-            playerInitialize();
-        }
-
-        populateTrackDuration();
-    }
-
-    public void songFinished() {
-        mSeekBar.removeCallbacks(mUpdateSeekBarRunnable);
-        updateTrackPosition(0);
-        mPlayerState = PLAYER_PAUSED; // Technically the media player is stopped, but we don't care.
-        mTrackPlayRequested = false;
-        mImageButtonPlayPause.setImageResource(mPlayIcon);
     }
 }

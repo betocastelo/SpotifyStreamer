@@ -36,8 +36,10 @@ public class MediaPlayerService extends Service {
     private static final int PLAYER_COMPLETED = 5;
 
     private void playerCompleted() {
+        Log.i(LOG_TAG, "MP completed, stopping self.");
         Intent intent = new Intent(Utility.ACTION_END_OF_SONG);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        stopSelf();
     }
 
     private void setupMediaPlayer() {
@@ -92,12 +94,6 @@ public class MediaPlayerService extends Service {
                 return false;
             }
         });
-
-        mMediaPlayer.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener() {
-            @Override
-            public void onSeekComplete(MediaPlayer mediaPlayer) {
-            }
-        });
     }
 
     @Override
@@ -107,6 +103,7 @@ public class MediaPlayerService extends Service {
     }
 
     public int getSongPosition() {
+        Log.i(LOG_TAG, "Sending song position...");
         return mMediaPlayer.getCurrentPosition();
     }
 
