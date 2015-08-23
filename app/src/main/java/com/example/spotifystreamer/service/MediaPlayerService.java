@@ -107,7 +107,6 @@ public class MediaPlayerService extends Service {
     }
 
     public int getSongPosition() {
-        Log.i(LOG_TAG, "Sending song position...");
         return mMediaPlayer.getCurrentPosition();
     }
 

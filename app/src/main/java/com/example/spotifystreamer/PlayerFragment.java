@@ -1,6 +1,6 @@
 package com.example.spotifystreamer;
 
-import android.app.Fragment;
+import android.app.DialogFragment;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -9,6 +9,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -29,7 +30,7 @@ import java.util.ArrayList;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class PlayerFragment extends Fragment {
+public class PlayerFragment extends DialogFragment {
 
     private static final String LOG_TAG = PlayerFragment.class.getSimpleName();
 
@@ -350,16 +351,12 @@ public class PlayerFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (savedInstanceState == null
-                || !savedInstanceState.containsKey(Utility.KEY_SEARCH_RESULTS)) {
+        if (savedInstanceState == null) {
             mSearchResults = new ArrayList<>();
-
-            Intent intent = getActivity().getIntent();
-            if (intent != null && intent.hasExtra(Utility.KEY_SEARCH_RESULTS)) {
-                mSearchResults = intent.getParcelableArrayListExtra(Utility.KEY_SEARCH_RESULTS);
-
-                if (intent.hasExtra(Utility.KEY_TRACK_INDEX))
-                    mCurrentTrackIndex = intent.getIntExtra(Utility.KEY_TRACK_INDEX, 0);
+            Bundle arguments = getArguments();
+            if (arguments != null) {
+                mSearchResults = arguments.getParcelableArrayList(Utility.KEY_SEARCH_RESULTS);
+                mCurrentTrackIndex = arguments.getInt(Utility.KEY_TRACK_INDEX);
             }
         } else {
             mSearchResults = savedInstanceState.getParcelableArrayList(Utility.KEY_SEARCH_RESULTS);
@@ -390,7 +387,7 @@ public class PlayerFragment extends Fragment {
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(@NonNull Bundle outState) {
         outState.putParcelableArrayList(Utility.KEY_SEARCH_RESULTS, mSearchResults);
         outState.putInt(Utility.KEY_TRACK_INDEX, mCurrentTrackIndex);
         outState.putInt(Utility.KEY_PLAYING_TRACK_INDEX, mPlayingTrackIndex);
@@ -419,6 +416,17 @@ public class PlayerFragment extends Fragment {
         }
 
         super.onStop();
+    }
+
+    public static PlayerFragment newInstance(ArrayList<SpotifySearchResult> searchResults,
+                                             int currentTrackIndex) {
+        PlayerFragment fragment = new PlayerFragment();
+
+        Bundle arguments = new Bundle();
+        arguments.putParcelableArrayList(Utility.KEY_SEARCH_RESULTS, searchResults);
+        arguments.putInt(Utility.KEY_TRACK_INDEX, currentTrackIndex);
+        fragment.setArguments(arguments);
+        return fragment;
     }
 
     public void nextTrack() {

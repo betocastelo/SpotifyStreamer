@@ -1,8 +1,9 @@
 package com.example.spotifystreamer;
 
+import android.app.DialogFragment;
 import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.content.Context;
-import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -36,6 +37,8 @@ public class TopTracksFragment extends Fragment {
 
     private static final String LOG_TAG = TopTracksFragment.class.getSimpleName();
 
+    private static final String TAG_PLAYER_FRAGMENT = "player_fragment";
+
     private TracksAdapter mTracksAdapter;
     private ArrayList<SpotifySearchResult> mSearchResults = new ArrayList<>();
 
@@ -46,6 +49,19 @@ public class TopTracksFragment extends Fragment {
     private void retrieveTopTracks(String artistId) {
         SpotifyTracksTask spotifyTracksTask = new SpotifyTracksTask();
         spotifyTracksTask.execute(artistId);
+    }
+
+    private void showPlayer(int trackNumber) {
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+
+        Fragment prev = getFragmentManager().findFragmentByTag(TAG_PLAYER_FRAGMENT);
+        if (prev != null) {
+            ft.remove(prev);
+        }
+        ft.addToBackStack(null);
+
+        DialogFragment player = PlayerFragment.newInstance(mSearchResults, trackNumber);
+        player.show(ft, TAG_PLAYER_FRAGMENT);
     }
 
     @Override
@@ -71,11 +87,7 @@ public class TopTracksFragment extends Fragment {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                // Pass position and list of tracks to player intent.
-                Intent intent = new Intent(getActivity(), PlayerActivity.class)
-                        .putExtra(Utility.KEY_TRACK_INDEX, position)
-                        .putParcelableArrayListExtra(Utility.KEY_SEARCH_RESULTS, mSearchResults);
-                startActivity(intent);
+                showPlayer(position);
             }
         });
 
