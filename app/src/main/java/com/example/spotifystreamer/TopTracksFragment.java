@@ -31,7 +31,7 @@ import kaaes.spotify.webapi.android.models.Tracks;
 import retrofit.RetrofitError;
 
 /**
- * Displays the top 10 tracks for the given artist id (passed by Intent.EXTRA_TEXT).
+ * Displays the top 10 tracks for the given artist id.
  */
 public class TopTracksFragment extends Fragment {
 

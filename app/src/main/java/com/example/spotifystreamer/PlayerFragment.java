@@ -27,15 +27,12 @@ import com.squareup.picasso.Picasso;
 import java.io.IOException;
 import java.util.ArrayList;
 
-/**
- * A placeholder fragment containing a simple view.
- */
 public class PlayerFragment extends DialogFragment {
 
     private static final String LOG_TAG = PlayerFragment.class.getSimpleName();
 
-    // Defined here instead of in Utility because it's only used internally.
     private static final String KEY_CURRENT_TRACK_POSITION = "current_track_position";
+
     private ArrayList<SpotifySearchResult> mSearchResults;
     private int mCurrentTrackIndex = 0;
     private int mPlayingTrackIndex = -1;
@@ -110,7 +107,6 @@ public class PlayerFragment extends DialogFragment {
     private BroadcastReceiver onPlayerStarted = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.i(LOG_TAG, "Received started broadcast.");
             mPlayerState = PLAYER_STARTED;
             updateTrackPosition();
         }
@@ -164,7 +160,6 @@ public class PlayerFragment extends DialogFragment {
     }
 
     private void initializePlayer(String previewUrl) {
-        Log.i(LOG_TAG, "Initializing player...");
         mSeekBar.setEnabled(false);
 
         if (mPlayerService != null) {
@@ -250,8 +245,6 @@ public class PlayerFragment extends DialogFragment {
     }
 
     private void playerPause() {
-        Log.i(LOG_TAG, "Pausing player...");
-
         if (mPlayerService != null) {
             mPlayerService.playerPause();
         }
@@ -264,10 +257,8 @@ public class PlayerFragment extends DialogFragment {
 
     private void playerStart() {
         mTrackPlayRequested = true;
-        Log.i(LOG_TAG, "Requested player start.");
 
         if (mPlayerService != null) {
-            Log.i(LOG_TAG, "Starting player...");
             mPlayerService.playerStart();
             mPlayingTrackIndex = mCurrentTrackIndex;
             mImageButtonPlayPause.setImageResource(mPauseIcon);
@@ -302,7 +293,7 @@ public class PlayerFragment extends DialogFragment {
     }
 
     /**
-     * @link initializeViews must have been called first. There shouldn't be a need to check
+     * {@see initializeViews} must have been called first. There shouldn't be a need to check
      * this here, since these are both internal implementation details.
      */
     private void setupButtons() {

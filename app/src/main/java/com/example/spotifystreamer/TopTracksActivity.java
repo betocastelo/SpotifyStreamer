@@ -7,8 +7,6 @@ import android.view.MenuItem;
 
 public class TopTracksActivity extends Activity {
 
-    private static final String LOG_TAG = TopTracksActivity.class.getSimpleName();
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

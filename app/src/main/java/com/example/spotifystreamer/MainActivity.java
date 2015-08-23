@@ -34,13 +34,6 @@ public class MainActivity extends Activity implements ArtistsFragment.Callback {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-
-
-    }
-
-    @Override
     public void onArtistSelected(String artistId) {
         if (mUseTwoPane) {
             Bundle arguments = new Bundle();

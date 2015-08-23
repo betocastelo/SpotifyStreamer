@@ -29,12 +29,7 @@ import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
 import retrofit.RetrofitError;
 
-/**
- * A placeholder fragment containing a simple view.
- */
 public class ArtistsFragment extends Fragment {
-
-    private static final String LOG_TAG = ArtistsFragment.class.getSimpleName();
 
     private static final String KEY_SELECTED = "selected_position";
 
