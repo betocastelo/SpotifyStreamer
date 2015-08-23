@@ -37,6 +37,8 @@ public class TopTracksFragment extends Fragment {
 
     private static final String LOG_TAG = TopTracksFragment.class.getSimpleName();
 
+    private static final String KEY_SEARCH_RESULTS = "search_results";
+
     private static final String TAG_PLAYER_FRAGMENT = "player_fragment";
 
     private TracksAdapter mTracksAdapter;
@@ -68,10 +70,14 @@ public class TopTracksFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Bundle arguments = getArguments();
-        if (arguments != null) {
-            String artistId = arguments.getString(Utility.KEY_ARTIST_ID);
-            retrieveTopTracks(artistId);
+        if (savedInstanceState != null && savedInstanceState.containsKey(KEY_SEARCH_RESULTS)) {
+            mSearchResults = savedInstanceState.getParcelableArrayList(KEY_SEARCH_RESULTS);
+        } else {
+            Bundle arguments = getArguments();
+            if (arguments != null) {
+                String artistId = arguments.getString(Utility.KEY_ARTIST_ID);
+                retrieveTopTracks(artistId);
+            }
         }
     }
 
@@ -92,6 +98,12 @@ public class TopTracksFragment extends Fragment {
         });
 
         return rootView;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList(KEY_SEARCH_RESULTS, mSearchResults);
+        super.onSaveInstanceState(outState);
     }
 
     public class TracksAdapter extends ArrayAdapter<SpotifySearchResult> {
